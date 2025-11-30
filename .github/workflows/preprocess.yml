@@ -1,0 +1,52 @@
+name: Preprocessing Dataset
+
+on:
+  push:
+    paths:
+      - "preprocessing/**"
+      - "stroke_risk_dataset.csv"
+      - ".github/workflows/preprocess.yml"
+  workflow_dispatch:
+
+jobs:
+  preprocess:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pandas==2.2.2 scikit-learn==1.4.2 imbalanced-learn==0.12.2
+
+      - name: Run Preprocessing Script
+        run: python preprocessing/automate_ferrypebriansyah.py
+
+      - name: Upload Preprocessed Dataset (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dataset_preprocessing
+          path: preprocessing/dataset_preprocessing/
+
+      - name: Commit & Push processed dataset
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email github-actions[bot]@users.noreply.github.com
+
+          # Pindahkan CSV ke dalam preprocessing
+          mv strokedataset_preprocessed.csv preprocessing/
+
+          # Tambahkan semua perubahan di preprocessing (folder + csv)
+          git add preprocessing/
+
+          git commit -m "Update preprocessed dataset" || echo "No changes"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
